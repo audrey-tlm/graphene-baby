@@ -1,0 +1,112 @@
+/* GENERATED FILE — do not edit by hand.
+ * Produced by scripts/generate-tokens-file.mjs from
+ * src/theme/tokenSchema.generated.ts. Re-run `npm run generate:tokens-file`
+ * after the token schema changes.
+ *
+ * Graphene's own light/dark values — this is the design system's defaults,
+ * not any per-user overrides saved in the Theme settings panel.
+ */
+
+:root {
+  /* Surface */
+  --background: var(--graphene-white);
+  --foreground: var(--graphene-stone-900);
+  /* Card */
+  --card: var(--graphene-white);
+  --card-foreground: var(--graphene-stone-900);
+  /* Popover */
+  --popover: var(--graphene-white);
+  --popover-foreground: var(--graphene-stone-900);
+  /* Primary (Brand) */
+  --primary: var(--graphene-solaris-600);
+  --primary-foreground: var(--graphene-white);
+  /* Secondary */
+  --secondary: var(--graphene-stone-100);
+  --secondary-foreground: var(--graphene-stone-800);
+  /* Muted */
+  --muted: var(--graphene-stone-100);
+  --muted-foreground: var(--graphene-stone-500);
+  /* Accent */
+  --accent: var(--graphene-stone-200);
+  --accent-foreground: var(--graphene-stone-900);
+  /* Destructive */
+  --destructive: var(--graphene-red-600);
+  --destructive-foreground: var(--graphene-white);
+  /* Success */
+  --success: var(--graphene-green-600);
+  --success-foreground: var(--graphene-white);
+  /* Warning */
+  --warning: var(--graphene-amber-500);
+  --warning-foreground: var(--graphene-amber-950);
+  /* Highlight */
+  --highlight: var(--graphene-violet-600);
+  --highlight-foreground: var(--graphene-white);
+  /* Other */
+  --border: var(--graphene-stone-200);
+  --input: var(--graphene-stone-200);
+  --ring: var(--graphene-solaris-500);
+  --control-border: var(--graphene-stone-500);
+  --overlay-border: color-mix(in oklab, var(--foreground) 5%, transparent);
+  --chart-1: var(--graphene-blue-400);
+  --chart-2: var(--graphene-teal-400);
+  --chart-3: var(--graphene-green-500);
+  --chart-4: var(--graphene-amber-400);
+  --chart-5: var(--graphene-violet-400);
+  --chart-6: var(--graphene-rose-400);
+  --chart-7: var(--graphene-solaris-400);
+  --chart-8: var(--graphene-indigo-400);
+  --chart-9: var(--graphene-lime-400);
+  --chart-10: var(--graphene-cyan-400);
+}
+
+.dark {
+  /* Surface */
+  --background: var(--graphene-stone-975);
+  --foreground: var(--graphene-stone-50);
+  /* Card */
+  --card: var(--graphene-stone-900);
+  --card-foreground: var(--graphene-stone-50);
+  /* Popover */
+  --popover: var(--graphene-stone-750);
+  --popover-foreground: var(--graphene-stone-50);
+  /* Primary (Brand) */
+  --primary: var(--graphene-solaris-400);
+  --primary-foreground: var(--graphene-stone-950);
+  /* Secondary */
+  --secondary: var(--graphene-stone-800);
+  --secondary-foreground: var(--graphene-stone-50);
+  /* Muted */
+  --muted: var(--graphene-stone-800);
+  --muted-foreground: var(--graphene-stone-400);
+  /* Accent */
+  --accent: var(--graphene-stone-700);
+  --accent-foreground: var(--graphene-stone-50);
+  /* Destructive */
+  --destructive: var(--graphene-red-400);
+  --destructive-foreground: var(--graphene-white);
+  /* Success */
+  --success: var(--graphene-green-500);
+  --success-foreground: var(--graphene-white);
+  /* Warning */
+  --warning: var(--graphene-amber-400);
+  --warning-foreground: var(--graphene-amber-950);
+  /* Highlight */
+  --highlight: var(--graphene-violet-400);
+  --highlight-foreground: var(--graphene-stone-950);
+  /* Other */
+  --border: color-mix(in oklab, var(--foreground) 10%, transparent);
+  --input: color-mix(in oklab, var(--foreground) 15%, transparent);
+  --ring: var(--graphene-solaris-400);
+  --control-border: var(--graphene-stone-500);
+  --overlay-border: color-mix(in oklab, var(--foreground) 15%, transparent);
+  --chart-1: var(--graphene-blue-400);
+  --chart-2: var(--graphene-teal-400);
+  --chart-3: var(--graphene-green-500);
+  --chart-4: var(--graphene-amber-400);
+  --chart-5: var(--graphene-violet-400);
+  --chart-6: var(--graphene-rose-400);
+  --chart-7: var(--graphene-solaris-400);
+  --chart-8: var(--graphene-indigo-400);
+  --chart-9: var(--graphene-lime-400);
+  --chart-10: var(--graphene-cyan-400);
+}

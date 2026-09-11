@@ -1,0 +1,85 @@
+@import 'tailwindcss';
+@import '@gravitee/graphene-core/tailwind-theme';
+@source './**/*.{ts,tsx}';
+
+/*
+ * WCAG AA contrast fixes for Graphene tokens that fail 4.5:1 against their
+ * paired token (see the "Muted" / "Success" rows in the theme settings
+ * panel's contrast checker). Each value keeps the original hue and, where
+ * possible, chroma — only lightness moved, by the smallest amount that
+ * clears 4.5:1, so the color stays as close as possible to the default:
+ *
+ *  - muted-foreground (light): stone-500 oklch(55.3% .013 55), 4.40:1 → 54%, 4.66:1
+ *  - muted-foreground (dark): stone-400 already passes (5.86:1) — left alone
+ *  - success (light): green-600 oklch(62.7% .194 149), 3.22:1 → chroma also
+ *    reduced to the sRGB gamut limit at the passing lightness, 4.75:1
+ *  - success (dark): green-500 oklch(72.3% .219 149), 2.24:1 → same gamut
+ *    limit as the light fix (149° hue clips to the same max chroma once
+ *    dark enough to pass against white), 4.75:1
+ *
+ * `@gravitee/graphene-core/styles` loads after this file (see main.tsx) so
+ * its own `:root`/`.dark` rules would otherwise win on source order alone;
+ * `html:root` / `html.dark` add one type selector of specificity so these
+ * rules win regardless of import order. A user's own override from the
+ * theme settings panel (an inline style on <html>) still wins over both.
+ *
+ * `:root` matches `<html>` whether or not it also has the `.dark` class, so
+ * `html.dark` must restate `--muted-foreground` at the same (0,1,1)
+ * specificity — otherwise the light-only fix below would leak into dark
+ * mode and break its already-passing contrast.
+ */
+html:root {
+  --muted-foreground: oklch(54% .013 55);
+  --success: oklch(54% .15 149);
+}
+
+html.dark {
+  --muted-foreground: var(--graphene-stone-400);
+  --success: oklch(54% .15 149);
+}
+
+/*
+ * Active sidebar nav item: a subtle primary tint, not Graphene's default
+ * neutral `--sidebar-accent` (the same token hover already uses, so today
+ * the active and hovered states look identical). See
+ * `SIDEBAR_NAV_ACTIVE_CLASS` in src/components/sidebarNav.ts for where
+ * these are applied. Neither token below exists in Graphene today.
+ *
+ * `--sidebar-active-background`: 8% (light) / 10% (dark) mix of
+ * `--sidebar-primary` into `--sidebar-background` — clearly visible without
+ * overpowering the row.
+ *
+ * `--sidebar-active-foreground`: text/icon color, as light as each mode's
+ * background allows while still clearing WCAG AA (4.5:1) — verified by
+ * rendering each candidate lightness to a canvas and computing its actual
+ * contrast ratio against the resolved `--sidebar-active-background`, not
+ * estimated from the oklch numbers alone (gamut clipping makes those two
+ * diverge at high chroma).
+ *
+ * Dark mode has real headroom: plain `--sidebar-primary` (`solaris-400`,
+ * 73% L) already sits at 6.04:1 against the tinted dark background, so it
+ * was pushed lighter, to 78% L (~6.7:1) — clearly lighter, still nowhere
+ * near the AA floor.
+ *
+ * Light mode has none: `--primary` (`solaris-600`, 58% L) only clears AA
+ * against white by ~0.12 of a point (4.62:1) to begin with, and measured
+ * contrast against the 8%-tinted background peaks right around 56% L
+ * (4.52:1) — 56.5% L already measures 4.43:1, under the floor. So 56% L
+ * is both the lightest AND the minimum-safe value simultaneously; there is
+ * no lighter option that keeps 4.5:1 here without also changing the
+ * background tint (out of scope for a text-color change).
+ */
+@theme {
+  --color-sidebar-active-background: var(--sidebar-active-background);
+  --color-sidebar-active-foreground: var(--sidebar-active-foreground);
+}
+
+html:root {
+  --sidebar-active-background: color-mix(in oklab, var(--sidebar-primary) 8%, var(--sidebar-background));
+  --sidebar-active-foreground: oklch(56% 0.17 42.97);
+}
+
+html.dark {
+  --sidebar-active-background: color-mix(in oklab, var(--sidebar-primary) 10%, var(--sidebar-background));
+  --sidebar-active-foreground: oklch(78% 0.18 48);
+}
