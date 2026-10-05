@@ -4,6 +4,7 @@ import {
   SEMANTIC_BRAND_MAPPING_EXCEPTIONS,
   isSemanticStatusTokenId,
 } from './config/semanticColorMapping';
+import { PATTERN_REGISTRY } from './config/patternRegistry';
 import { isApprovedSpacingToken } from './config/spacing';
 import { contentRoleStrength, isApprovedContentRoleTreatment } from './config/typography';
 import type {
@@ -149,34 +150,48 @@ export const HIERARCHY_RULES: readonly Rule<readonly GuardrailFact[]>[] = [
     },
   },
 
-  // 4. Destructive actions must not use primary-action emphasis.
+  // 4. Destructive actions never take the primary slot.
   {
-    id: 'hierarchy.destructive-not-primary-emphasis',
+    id: 'hierarchy.destructive-not-primary-slot',
     category: 'hierarchy',
-    description: 'Destructive actions never take the primary slot, and are visually separated in overflow menus.',
+    description: 'A destructive action cannot occupy the PageHeader primary action slot.',
     enforcement: 'runtime',
     evaluate: (facts) => {
       const groups = facts.filter(isActionGroupFact);
       if (groups.length === 0) {
-        return [
-          { ruleId: 'hierarchy.destructive-not-primary-emphasis', status: 'pass', detail: 'No action groups on this page.' },
-        ];
+        return [{ ruleId: 'hierarchy.destructive-not-primary-slot', status: 'pass', detail: 'No action groups on this page.' }];
       }
       return groups.map((group, i): RuleResult => {
-        const problems: string[] = [];
-        if (group.primaryVariant === 'destructive') problems.push('the primary action is styled destructive');
-        if (group.overflowHasUnseparatedDestructive) {
-          problems.push('a destructive overflow action has no separator setting it apart');
-        }
+        const isDestructive = group.primaryVariant === 'destructive';
         return {
-          ruleId: 'hierarchy.destructive-not-primary-emphasis',
-          status: problems.length > 0 ? 'violation' : 'pass',
-          detail:
-            problems.length > 0
-              ? `Action group ${i + 1}: ${problems.join('; ')}.`
-              : `Action group ${i + 1}: no destructive action competes with the primary path.`,
+          ruleId: 'hierarchy.destructive-not-primary-slot',
+          status: isDestructive ? 'violation' : 'pass',
+          detail: isDestructive
+            ? `Action group ${i + 1}: the primary action is styled destructive.`
+            : `Action group ${i + 1}: the primary action is not destructive.`,
         };
       });
+    },
+  },
+
+  // 4b. Destructive overflow actions are set apart from the rest.
+  {
+    id: 'hierarchy.destructive-overflow-grouped',
+    category: 'hierarchy',
+    description: 'Destructive actions in an overflow menu are grouped separately from non-destructive actions.',
+    enforcement: 'runtime',
+    evaluate: (facts) => {
+      const groups = facts.filter(isActionGroupFact);
+      if (groups.length === 0) {
+        return [{ ruleId: 'hierarchy.destructive-overflow-grouped', status: 'pass', detail: 'No action groups on this page.' }];
+      }
+      return groups.map((group, i): RuleResult => ({
+        ruleId: 'hierarchy.destructive-overflow-grouped',
+        status: group.overflowHasUnseparatedDestructive ? 'violation' : 'pass',
+        detail: group.overflowHasUnseparatedDestructive
+          ? `Action group ${i + 1}: a destructive overflow action has no separator setting it apart.`
+          : `Action group ${i + 1}: no unseparated destructive overflow action.`,
+      }));
     },
   },
 
@@ -217,26 +232,27 @@ export const HIERARCHY_RULES: readonly Rule<readonly GuardrailFact[]>[] = [
     "Graphene's Empty/DataTableEmptyState components require a `title` and `description` prop — omitting the explanation is a type error, not a runtime check.",
   ),
 
-  // Important actions should not be hidden behind an overflow menu.
+  // Overflow menus stay within the PageHeader pattern's registered maximum.
   {
     id: 'hierarchy.overflow-not-overloaded',
     category: 'hierarchy',
-    description: 'Overflow menus stay short enough that nothing important gets lost in them.',
+    description: 'An overflow menu contains no more than the registered maximum number of actions.',
     enforcement: 'runtime',
     evaluate: (facts) => {
       const groups = facts.filter(isActionGroupFact);
       if (groups.length === 0) {
         return [{ ruleId: 'hierarchy.overflow-not-overloaded', status: 'pass', detail: 'No action groups on this page.' }];
       }
+      const max = PATTERN_REGISTRY.pageHeader.maxOverflowActions;
       return groups.map((group, i): RuleResult => {
-        const status: RuleStatus = group.overflowCount > 4 ? 'warning' : 'pass';
+        const status: RuleStatus = group.overflowCount > max ? 'violation' : 'pass';
         return {
           ruleId: 'hierarchy.overflow-not-overloaded',
           status,
           detail:
-            status === 'warning'
-              ? `Action group ${i + 1}: ${group.overflowCount} actions in the "…" menu — worth checking none of them is actually important enough to surface directly.`
-              : `Action group ${i + 1}: ${group.overflowCount} overflow action${group.overflowCount === 1 ? '' : 's'}.`,
+            status === 'violation'
+              ? `Action group ${i + 1}: ${group.overflowCount} actions in the "…" menu — the registered maximum is ${max}.`
+              : `Action group ${i + 1}: ${group.overflowCount} of at most ${max} overflow action${max === 1 ? '' : 's'}.`,
         };
       });
     },
@@ -310,13 +326,11 @@ export const HIERARCHY_RULES: readonly Rule<readonly GuardrailFact[]>[] = [
     },
   },
 
-  // Guardrail 2 — exactly one <FocalPoint> per <Section>, referencing an element that
-  // actually exists. Reinstated as a real check now that there's a declaration to verify —
-  // it existed only as a manual (always-warning) rule before and was removed for that reason.
+  // Guardrail 2 — exactly one <FocalPoint> per <Section>.
   {
     id: 'hierarchy.single-focal-point',
     category: 'hierarchy',
-    description: 'Each declared Section has exactly one FocalPoint, and it matches something that actually renders inside it.',
+    description: 'Every declared Section has exactly one FocalPoint.',
     enforcement: 'runtime',
     evaluate: (facts) => {
       const sections = facts.filter(isSectionFact);
@@ -325,32 +339,39 @@ export const HIERARCHY_RULES: readonly Rule<readonly GuardrailFact[]>[] = [
       }
       const focalPoints = facts.filter(isFocalPointFact);
       return sections.map((section, i): RuleResult => {
-        const inSection = focalPoints.filter((fp) => fp.sectionKey === section.sectionKey);
-        if (inSection.length === 0) {
-          return {
-            ruleId: 'hierarchy.single-focal-point',
-            status: 'violation',
-            detail: `Section ${i + 1}: declares focalPoint="${section.focalPoint}" but no FocalPoint was found inside it.`,
-          };
-        }
-        if (inSection.length > 1) {
-          return {
-            ruleId: 'hierarchy.single-focal-point',
-            status: 'violation',
-            detail: `Section ${i + 1}: has ${inSection.length} FocalPoints — only one is allowed per section.`,
-          };
-        }
-        if (inSection[0].name !== section.focalPoint) {
-          return {
-            ruleId: 'hierarchy.single-focal-point',
-            status: 'violation',
-            detail: `Section ${i + 1}: declares focalPoint="${section.focalPoint}" but the FocalPoint inside is named "${inSection[0].name}".`,
-          };
-        }
+        const count = focalPoints.filter((fp) => fp.sectionKey === section.sectionKey).length;
         return {
           ruleId: 'hierarchy.single-focal-point',
-          status: 'pass',
-          detail: `Section ${i + 1}: focal point "${section.focalPoint}" declared once and present.`,
+          status: count === 1 ? 'pass' : 'violation',
+          detail:
+            count === 1
+              ? `Section ${i + 1}: exactly one FocalPoint.`
+              : `Section ${i + 1}: has ${count} FocalPoints — exactly one is required.`,
+        };
+      });
+    },
+  },
+
+  // Guardrail 2 (continued) — the declared focal point must be the one that actually renders inside the Section.
+  {
+    id: 'hierarchy.focal-point-renders-in-section',
+    category: 'hierarchy',
+    description: "A Section's declared FocalPoint corresponds to content that actually renders inside that Section.",
+    enforcement: 'runtime',
+    evaluate: (facts) => {
+      const sections = facts.filter(isSectionFact);
+      if (sections.length === 0) {
+        return [{ ruleId: 'hierarchy.focal-point-renders-in-section', status: 'pass', detail: 'No declared sections on this page.' }];
+      }
+      const focalPoints = facts.filter(isFocalPointFact);
+      return sections.map((section, i): RuleResult => {
+        const renders = focalPoints.some((fp) => fp.sectionKey === section.sectionKey && fp.name === section.focalPoint);
+        return {
+          ruleId: 'hierarchy.focal-point-renders-in-section',
+          status: renders ? 'pass' : 'violation',
+          detail: renders
+            ? `Section ${i + 1}: focal point "${section.focalPoint}" renders inside it.`
+            : `Section ${i + 1}: declares focalPoint="${section.focalPoint}" but no FocalPoint with that name renders inside it.`,
         };
       });
     },

@@ -24,6 +24,7 @@ import {
 import { useMemo, useState } from 'react';
 
 import { HelpContentProvider, HelpContentToggle } from './components/help';
+import { HierarchyGuardrailsPanel } from './components/HierarchyGuardrailsPanel';
 import { SIDEBAR_NAV_ACTIVE_CLASS } from './components/sidebarNav';
 import { ThemeModeToggle } from './components/ThemeModeToggle';
 import { ThemeSettingsPanel } from './components/ThemeSettingsPanel';
@@ -97,6 +98,7 @@ export function App() {
                       <HelpContentToggle />
                       <ThemeModeToggle />
                       <ThemeSettingsPanel />
+                      <HierarchyGuardrailsPanel />
                     </div>
                   }
                 />

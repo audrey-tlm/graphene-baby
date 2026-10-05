@@ -11,7 +11,12 @@
  * guardrails are built to avoid asking for.
  */
 export const PATTERN_REGISTRY = {
-  pageHeader: { component: 'PageHeader', description: 'Page title, description, and up to 2 header actions.' },
+  pageHeader: {
+    component: 'PageHeader',
+    description: 'Page title, description, and up to 2 header actions.',
+    /** Most actions the header's overflow ("…") menu may hold. */
+    maxOverflowActions: 4,
+  },
   emptyState: {
     component: 'Empty / DataTableEmptyState',
     description: 'An empty list/table/section state with an explanation and a next step.',
@@ -25,6 +30,6 @@ export const PATTERN_REGISTRY = {
     description: "Dismissible educational content, toggleable via the app's global Helpful Content control.",
   },
   sidePanel: { component: 'Sheet', description: "Configure or edit something without leaving the current page." },
-} satisfies Readonly<Record<string, { readonly component: string; readonly description: string }>>;
+} satisfies Readonly<Record<string, { readonly component: string; readonly description: string; readonly maxOverflowActions?: number }>>;
 
 export type RegisteredPattern = keyof typeof PATTERN_REGISTRY;

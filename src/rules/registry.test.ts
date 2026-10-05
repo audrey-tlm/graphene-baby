@@ -77,11 +77,10 @@ describe('hierarchy.primary-stronger-emphasis', () => {
   });
 });
 
-describe('hierarchy.destructive-not-primary-emphasis', () => {
-  it('passes when nothing destructive is in the primary slot or unseparated in overflow', () => {
-    const facts: GuardrailFact[] = [baseActionGroup];
-    const [result] = evaluateRules(HIERARCHY_RULES, facts).filter(
-      (r) => r.ruleId === 'hierarchy.destructive-not-primary-emphasis',
+describe('hierarchy.destructive-not-primary-slot', () => {
+  it('passes when the primary action is not destructive', () => {
+    const [result] = evaluateRules(HIERARCHY_RULES, [baseActionGroup]).filter(
+      (r) => r.ruleId === 'hierarchy.destructive-not-primary-slot',
     );
     expect(result.status).toBe('pass');
   });
@@ -89,15 +88,24 @@ describe('hierarchy.destructive-not-primary-emphasis', () => {
   it('is a violation when the primary action is styled destructive', () => {
     const facts: GuardrailFact[] = [{ ...baseActionGroup, primaryVariant: 'destructive' }];
     const [result] = evaluateRules(HIERARCHY_RULES, facts).filter(
-      (r) => r.ruleId === 'hierarchy.destructive-not-primary-emphasis',
+      (r) => r.ruleId === 'hierarchy.destructive-not-primary-slot',
     );
     expect(result.status).toBe('violation');
+  });
+});
+
+describe('hierarchy.destructive-overflow-grouped', () => {
+  it('passes when no destructive overflow item is unseparated', () => {
+    const [result] = evaluateRules(HIERARCHY_RULES, [baseActionGroup]).filter(
+      (r) => r.ruleId === 'hierarchy.destructive-overflow-grouped',
+    );
+    expect(result.status).toBe('pass');
   });
 
   it('is a violation when a destructive overflow item has no separator', () => {
     const facts: GuardrailFact[] = [{ ...baseActionGroup, overflowHasUnseparatedDestructive: true }];
     const [result] = evaluateRules(HIERARCHY_RULES, facts).filter(
-      (r) => r.ruleId === 'hierarchy.destructive-not-primary-emphasis',
+      (r) => r.ruleId === 'hierarchy.destructive-overflow-grouped',
     );
     expect(result.status).toBe('violation');
   });
@@ -137,12 +145,20 @@ describe('hierarchy.overflow-not-overloaded', () => {
     expect(result.status).toBe('pass');
   });
 
-  it('warns (not violation) on a long overflow menu', () => {
-    const facts: GuardrailFact[] = [{ ...baseActionGroup, overflowCount: 6 }];
+  it('passes at exactly the registered maximum', () => {
+    const facts: GuardrailFact[] = [{ ...baseActionGroup, overflowCount: 4 }];
     const [result] = evaluateRules(HIERARCHY_RULES, facts).filter(
       (r) => r.ruleId === 'hierarchy.overflow-not-overloaded',
     );
-    expect(result.status).toBe('warning');
+    expect(result.status).toBe('pass');
+  });
+
+  it('is a violation above the registered maximum', () => {
+    const facts: GuardrailFact[] = [{ ...baseActionGroup, overflowCount: 5 }];
+    const [result] = evaluateRules(HIERARCHY_RULES, facts).filter(
+      (r) => r.ruleId === 'hierarchy.overflow-not-overloaded',
+    );
+    expect(result.status).toBe('violation');
   });
 });
 
@@ -225,12 +241,39 @@ describe('hierarchy.single-focal-point', () => {
     expect(result.status).toBe('violation');
   });
 
+});
+
+describe('hierarchy.focal-point-renders-in-section', () => {
+  it('passes when the declared FocalPoint renders inside the Section', () => {
+    const facts: GuardrailFact[] = [
+      { kind: 'section', sectionKey: 's1', focalPoint: 'project-name' },
+      { kind: 'focal-point', name: 'project-name', sectionKey: 's1' },
+    ];
+    const [result] = evaluateRules(HIERARCHY_RULES, facts).filter(
+      (r) => r.ruleId === 'hierarchy.focal-point-renders-in-section',
+    );
+    expect(result.status).toBe('pass');
+  });
+
   it('is a violation when the FocalPoint name does not match the Section’s declared focalPoint', () => {
     const facts: GuardrailFact[] = [
       { kind: 'section', sectionKey: 's1', focalPoint: 'project-name' },
       { kind: 'focal-point', name: 'wrong-name', sectionKey: 's1' },
     ];
-    const [result] = evaluateRules(HIERARCHY_RULES, facts).filter((r) => r.ruleId === 'hierarchy.single-focal-point');
+    const [result] = evaluateRules(HIERARCHY_RULES, facts).filter(
+      (r) => r.ruleId === 'hierarchy.focal-point-renders-in-section',
+    );
+    expect(result.status).toBe('violation');
+  });
+
+  it('is a violation when the matching FocalPoint renders in a different Section', () => {
+    const facts: GuardrailFact[] = [
+      { kind: 'section', sectionKey: 's1', focalPoint: 'project-name' },
+      { kind: 'focal-point', name: 'project-name', sectionKey: 's2' },
+    ];
+    const [result] = evaluateRules(HIERARCHY_RULES, facts).filter(
+      (r) => r.ruleId === 'hierarchy.focal-point-renders-in-section',
+    );
     expect(result.status).toBe('violation');
   });
 });

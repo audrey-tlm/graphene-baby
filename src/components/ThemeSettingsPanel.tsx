@@ -1,9 +1,6 @@
 import {
   Badge,
   Button,
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
   Label,
   ScrollArea,
   Separator,
@@ -20,40 +17,19 @@ import {
   type ResolvedTheme,
 } from '@gravitee/graphene-core';
 import {
-  ChevronRightIcon,
-  CircleCheckIcon,
-  OctagonXIcon,
   RefreshCwIcon,
-  ShieldCheckIcon,
   SlidersHorizontalIcon,
   TriangleAlertIcon,
 } from '@gravitee/graphene-core/icons';
 import { useMemo, useState } from 'react';
 
-import { RULE_DESCRIPTION_BY_ID } from '../rules/registry';
 import { useHierarchyReport } from '../rules/useHierarchyReport';
-import type { RuleResult, RuleStatus } from '../rules/types';
 import type { ContrastResult } from '../theme/contrast';
 import { useContrastReport } from '../theme/contrast';
 import { useApplyThemeDraft, useThemeConfig } from '../theme/ThemeConfigContext';
 import { CONTRAST_PAIRS } from '../theme/tokenSchema.generated';
 
 const CORE_PAIRS = CONTRAST_PAIRS.filter((pair) => pair.isCore);
-
-const STATUS_META: Record<
-  RuleStatus,
-  {
-    readonly icon: typeof CircleCheckIcon;
-    readonly badgeVariant: 'success' | 'warning' | 'destructive' | 'highlight';
-    readonly label: string;
-    readonly iconClassName: string;
-  }
-> = {
-  pass: { icon: CircleCheckIcon, badgeVariant: 'success', label: 'Pass', iconClassName: 'text-success' },
-  warning: { icon: TriangleAlertIcon, badgeVariant: 'warning', label: 'Warning', iconClassName: 'text-warning' },
-  violation: { icon: OctagonXIcon, badgeVariant: 'destructive', label: 'Violation', iconClassName: 'text-destructive' },
-  exempted: { icon: ShieldCheckIcon, badgeVariant: 'highlight', label: 'Exempted', iconClassName: 'text-highlight' },
-};
 
 function ColorField({
   tokenName,
@@ -126,87 +102,6 @@ function ContrastPairRow({ result }: { readonly result: ContrastResult }) {
           onReset={() => resetToken(result.pair.foreground, resolvedTheme)}
         />
       </div>
-    </div>
-  );
-}
-
-/** One guardrail result: status badge + icon (never color alone — see hierarchy.color-not-only-indicator) plus the rule it's for. */
-function HierarchyResultRow({ result }: { readonly result: RuleResult }) {
-  const meta = STATUS_META[result.status];
-  const Icon = meta.icon;
-  const description = RULE_DESCRIPTION_BY_ID[result.ruleId] ?? result.ruleId;
-
-  return (
-    <div className="flex items-start gap-2 rounded-lg border border-border p-2.5 text-xs">
-      <Icon aria-hidden="true" className={`mt-0.5 size-4 shrink-0 ${meta.iconClassName}`} />
-      <div className="flex min-w-0 flex-1 flex-col gap-1">
-        <div className="flex items-start justify-between gap-2">
-          <span className="font-medium text-foreground">{description}</span>
-          <Badge variant={meta.badgeVariant} className="shrink-0">
-            {meta.label}
-          </Badge>
-        </div>
-        <p className="text-muted-foreground">{result.detail}</p>
-      </div>
-    </div>
-  );
-}
-
-/** Groups results into Violation / Warning / Exempted / Pass, most-severe first, with passes collapsed by default (hierarchy.consistent-spacing-grouping, information density — don't show everything by default). */
-function HierarchyReport({ results }: { readonly results: readonly RuleResult[] }) {
-  const violations = results.filter((r) => r.status === 'violation');
-  const warnings = results.filter((r) => r.status === 'warning');
-  const exempted = results.filter((r) => r.status === 'exempted');
-  const passes = results.filter((r) => r.status === 'pass');
-
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <Badge variant="destructive">{violations.length} violation{violations.length === 1 ? '' : 's'}</Badge>
-        <Badge variant="warning">{warnings.length} warning{warnings.length === 1 ? '' : 's'}</Badge>
-        <Badge variant="highlight">{exempted.length} exempted</Badge>
-        <Badge variant="success">{passes.length} pass{passes.length === 1 ? '' : 'es'}</Badge>
-      </div>
-
-      {violations.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          {violations.map((result, i) => (
-            <HierarchyResultRow key={`${result.ruleId}-${i}`} result={result} />
-          ))}
-        </div>
-      ) : null}
-
-      {warnings.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          {warnings.map((result, i) => (
-            <HierarchyResultRow key={`${result.ruleId}-${i}`} result={result} />
-          ))}
-        </div>
-      ) : null}
-
-      {exempted.length > 0 ? (
-        <div className="flex flex-col gap-2">
-          {exempted.map((result, i) => (
-            <HierarchyResultRow key={`${result.ruleId}-${i}`} result={result} />
-          ))}
-        </div>
-      ) : null}
-
-      {passes.length > 0 ? (
-        <Collapsible>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" size="sm" className="group/trigger w-fit gap-1.5 px-1.5 text-muted-foreground">
-              <ChevronRightIcon aria-hidden="true" className="size-3.5 transition-transform group-data-[state=open]/trigger:rotate-90" />
-              Show {passes.length} passing check{passes.length === 1 ? '' : 's'}
-            </Button>
-          </CollapsibleTrigger>
-          <CollapsibleContent className="flex flex-col gap-2 pt-2">
-            {passes.map((result, i) => (
-              <HierarchyResultRow key={`${result.ruleId}-${i}`} result={result} />
-            ))}
-          </CollapsibleContent>
-        </Collapsible>
-      ) : null}
     </div>
   );
 }
@@ -300,13 +195,6 @@ export function ThemeSettingsPanel() {
             <Separator />
 
             <div className="flex flex-col gap-2">
-              <h2 className="text-sm font-semibold text-foreground">Hierarchy guardrails</h2>
-              <HierarchyReport results={hierarchyResults} />
-            </div>
-
-            <Separator />
-
-            <div className="flex flex-col gap-2">
               <h2 className="text-sm font-semibold text-foreground">Export as CSS</h2>
               <pre className="overflow-x-auto rounded-md bg-muted p-3 text-xs text-muted-foreground">{cssExport}</pre>
             </div>
@@ -317,7 +205,7 @@ export function ThemeSettingsPanel() {
           {!canSave ? (
             <p className="flex items-center gap-2 text-xs text-destructive">
               <TriangleAlertIcon aria-hidden="true" className="shrink-0" />
-              {failingCount} check{failingCount === 1 ? '' : 's'} failing — cannot save until resolved.
+              {failingCount} check{failingCount === 1 ? '' : 's'} failing — cannot save until resolved. See UX guardrails for hierarchy violations.
             </p>
           ) : hierarchyWarningCount > 0 ? (
             <p className="flex items-center gap-2 text-xs text-muted-foreground">
